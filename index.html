@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Is Crypto Dead Yet?</title>
+<meta name="description" content="Bitcoin price vs. worldwide 'is crypto dead?' Google search interest, 2010–2026. Live price, open data.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f4f0; --panel:#fefefe; --ink:#222018; --muted:#6f6c63; --line:#e4e2d9;
+    --btc:#ee8400; --btc-ink:#c96e00; --navy:#23395c; --navy-soft:#3a5277; --accent:#b23a48;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:"IBM Plex Mono",ui-monospace,monospace}
+  body{min-height:100vh;padding:40px 32px 32px;
+    background-image:radial-gradient(1200px 600px at 75% -10%, #fcfcfa 0%, transparent 60%);}
+  @media(max-width:640px){body{padding:24px 16px 24px}}
+  .wrap{max-width:1240px;margin:0 auto}
+  .kicker{font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  h1{font-family:"Anton",Impact,sans-serif;font-weight:400;line-height:.9;
+     font-size:clamp(46px,10.5vw,116px);text-transform:uppercase;color:#1a1813;letter-spacing:-0.01em}
+  h1 .q{color:var(--accent)}
+  .sub{font-family:"Playfair Display",Georgia,serif;font-style:italic;
+       font-size:clamp(16px,2.1vw,22px);color:#46443c;margin-top:14px;max-width:780px;line-height:1.45}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0 0}
+  @media(max-width:760px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px 12px;
+        box-shadow:0 1px 2px rgba(0,0,0,0.04);position:relative;min-height:96px}
+  .stat .n{font-family:"Anton",Impact,sans-serif;font-size:34px;line-height:1;transition:color .25s;letter-spacing:-0.005em}
+  .stat .l{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .stat .sub2{font-size:10.5px;color:var(--muted);margin-top:4px}
+  .stat .delta{font-size:10.5px;color:var(--muted);margin-top:5px;font-family:"IBM Plex Mono",monospace}
+  .stat .delta.up{color:#1d7a3a}
+  .stat .delta.down{color:var(--accent)}
+  .n.btc{color:var(--btc-ink)} .n.navy{color:var(--navy)} .n.accent{color:var(--accent)}
+  .live{position:absolute;top:10px;right:10px;display:flex;align-items:center;gap:6px;
+        font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  .live .dot{width:7px;height:7px;border-radius:50%;background:#9ca3a1;box-shadow:0 0 0 0 rgba(156,163,161,0)}
+  .live.on .dot{background:#1d7a3a;animation:pulse 1.8s ease-out infinite}
+  .live.on{color:#1d7a3a}
+  .live.err .dot{background:var(--accent)}
+  .live.err{color:var(--accent)}
+  @keyframes pulse{
+    0%{box-shadow:0 0 0 0 rgba(29,122,58,.45)}
+    70%{box-shadow:0 0 0 7px rgba(29,122,58,0)}
+    100%{box-shadow:0 0 0 0 rgba(29,122,58,0)}
+  }
+  .flash{animation:flash .9s ease-out}
+  @keyframes flash{0%{color:#1d7a3a}100%{color:var(--btc-ink)}}
+  .flash.down{animation:flashDown .9s ease-out}
+  @keyframes flashDown{0%{color:var(--accent)}100%{color:var(--btc-ink)}}
+
+  .chartcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px 16px;margin-top:14px;
+             box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+  @media(max-width:640px){.chartcard{padding:14px 12px 10px}}
+  .legendrow{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:0 2px 14px}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;font-size:12px;color:#46443c;flex:1;min-width:240px}
+  .legend i{display:inline-block;width:22px;height:11px;margin-right:8px;vertical-align:middle;border-radius:2px}
+  .legend .sw-btc{height:3px;background:var(--btc)}
+  .legend .sw-navy{background:rgba(36,57,92,0.16);border:1px solid var(--navy)}
+  .dl{display:inline-flex;align-items:center;gap:7px;background:var(--bg);border:1px solid var(--line);
+      color:#3a382f;font:500 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;
+      padding:8px 12px;border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s}
+  .dl:hover{background:#fff;border-color:#cfcdc1}
+  .dl svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+  .cw{position:relative;height:600px}
+  @media(max-width:900px){.cw{height:520px}}
+  @media(max-width:640px){.cw{height:420px}}
+  canvas{display:block;width:100%;height:100%}
+  #tip{position:absolute;pointer-events:none;opacity:0;
+    background:#fefefe;border:1px solid #dcdace;border-radius:8px;padding:9px 11px;
+    font-size:11.5px;line-height:1.55;white-space:nowrap;transition:opacity .08s;z-index:5;
+    box-shadow:0 4px 14px rgba(0,0,0,0.12)}
+  #tip b{color:#1a1813;font-weight:600}
+
+  .verdict{font-family:"Playfair Display",Georgia,serif;font-style:italic;color:var(--accent);
+    font-size:clamp(19px,2.6vw,26px);margin:24px 2px 4px;max-width:820px;line-height:1.35}
+  .foot{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.65;max-width:880px}
+  .foot p{margin-top:8px}
+  .foot b{color:#3a382f;font-weight:600}
+  .foot a{color:#3a382f}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kicker">Worldwide search interest &middot; Bitcoin price &middot; 2010&ndash;2026</div>
+  <h1>Is Crypto Dead Yet<span class="q">?</span></h1>
+  <div class="sub">Every time bitcoin crashes, the world googles <i>is crypto dead?</i> Every time so far, the answer has been no. The 2026 selloff has brought the question back.</div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="live" id="liveBadge"><span class="dot"></span><span id="liveLabel">connecting</span></div>
+      <div class="n btc" id="s-price">$&mdash;</div>
+      <div class="l">Bitcoin price</div>
+      <div class="delta" id="s-price-delta">&nbsp;</div>
+    </div>
+    <div class="stat">
+      <div class="n btc" id="s-ath">$&mdash;</div>
+      <div class="l">All-time high</div>
+      <div class="sub2" id="s-ath-when">&nbsp;</div>
+    </div>
+    <div class="stat">
+      <div class="n navy" id="s-peakmonth">&mdash;</div>
+      <div class="l">Peak panic</div>
+      <div class="sub2">death-search index = 100</div>
+    </div>
+    <div class="stat">
+      <div class="n accent" id="s-drawdown">&mdash;</div>
+      <div class="l">From peak</div>
+      <div class="sub2">vs. all-time high</div>
+    </div>
+  </div>
+
+  <div class="chartcard">
+    <div class="legendrow">
+      <div class="legend">
+        <span><i class="sw-btc"></i>Bitcoin, USD</span>
+        <span><i class="sw-navy"></i>&ldquo;Is crypto dead?&rdquo; index (peak = 100)</span>
+      </div>
+      <button class="dl" id="dlbtn" type="button" aria-label="Download source data CSV">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
+        <span>Data</span>
+      </button>
+    </div>
+    <div class="cw"><canvas id="c"></canvas><div id="tip"></div></div>
+  </div>
+
+  <div class="verdict">Every past obituary has been wrong. Whether 2026&rsquo;s is the exception is the one thing the chart cannot say.</div>
+  <div class="foot">
+    <p><b>The pattern.</b> Panic peaked twice in 2022: in <b>June</b> (Terra, Luna and Celsius collapsed in succession) and again in <b>November</b> (FTX failed). Bitcoin bottomed near $16,000 both times &mdash; and by October 6, 2025 had reached <b>$126,287</b>. The February 2026 selloff brought the chant back, at about 60% of the 2022 volume.</p>
+    <p><b>The one number.</b> The navy line sums six Google search phrasings &mdash; <i>bitcoin dead, crypto dead, bitcoin is dead, crypto is dead, is bitcoin dead, is crypto dead</i> &mdash; from one worldwide Trends query, rescaled so the all-time peak equals 100.</p>
+    <p><b>How to read it.</b> Bitcoin (orange, left axis) is linear, so the early years sit near the floor. Search index uses the right axis. The current bitcoin price updates live; search data runs through May 2026.</p>
+    <p><b>Sources.</b> Bitcoin: monthly closes from <a href="https://www.cryptocompare.com" rel="noopener" target="_blank">CryptoCompare</a>, current month from <a href="https://www.coingecko.com/en/api" rel="noopener" target="_blank">CoinGecko</a>. Search: Google Trends (worldwide, monthly) &mdash; <a id="srcdl" href="time_series_Worldwide_20031231-1600_20260606-1519.csv" download>download the CSV</a> or <a href="https://trends.google.com/trends/explore?date=all&q=%22bitcoin%20dead%22,%22crypto%20dead%22,%22bitcoin%20is%20dead%22,%22crypto%20is%20dead%22,%22is%20bitcoin%20dead%22,%22is%20crypto%20dead%22" rel="noopener" target="_blank">re-run the query</a>.</p>
+  </div>
+</div>
+
+<script id="trends-csv" type="text/plain">"Time","""bitcoin dead""","""crypto dead""","""bitcoin is dead""","""crypto is dead""","""is bitcoin dead""","""is crypto dead"""
+"2004-01-01",0,0,0,0,0,0
+"2004-02-01",0,0,0,0,0,0
+"2004-03-01",0,0,0,0,0,0
+"2004-04-01",0,0,0,0,0,0
+"2004-05-01",0,0,0,0,0,0
+"2004-06-01",0,0,0,0,0,0
+"2004-07-01",0,0,0,0,0,0
+"2004-08-01",0,0,0,0,0,0
+"2004-09-01",0,0,0,0,0,0
+"2004-10-01",0,0,0,0,0,0
+"2004-11-01",0,0,0,0,0,0
+"2004-12-01",0,0,0,0,0,0
+"2005-01-01",0,0,0,0,0,0
+"2005-02-01",0,0,0,0,0,0
+"2005-03-01",0,0,0,0,0,0
+"2005-04-01",0,0,0,0,0,0
+"2005-05-01",0,0,0,0,0,0
+"2005-06-01",0,0,0,0,0,0
+"2005-07-01",0,0,0,0,0,0
+"2005-08-01",0,0,0,0,0,0
+"2005-09-01",0,0,0,0,0,0
+"2005-10-01",0,0,0,0,0,0
+"2005-11-01",0,0,0,0,0,0
+"2005-12-01",0,0,0,0,0,0
+"2006-01-01",0,0,0,0,0,0
+"2006-02-01",0,0,0,0,0,0
+"2006-03-01",0,0,0,0,0,0
+"2006-04-01",0,0,0,0,0,0
+"2006-05-01",0,0,0,0,0,0
+"2006-06-01",0,0,0,0,0,0
+"2006-07-01",0,0,0,0,0,0
+"2006-08-01",0,0,0,0,0,0
+"2006-09-01",0,0,0,0,0,0
+"2006-10-01",0,0,0,0,0,0
+"2006-11-01",0,0,0,0,0,0
+"2006-12-01",0,0,0,0,0,0
+"2007-01-01",0,0,0,0,0,0
+"2007-02-01",0,0,0,0,0,0
+"2007-03-01",0,0,0,0,0,0
+"2007-04-01",0,0,0,0,0,0
+"2007-05-01",0,0,0,0,0,0
+"2007-06-01",0,0,0,0,0,0
+"2007-07-01",0,0,0,0,0,0
+"2007-08-01",0,0,0,0,0,0
+"2007-09-01",0,0,0,0,0,0
+"2007-10-01",0,0,0,0,0,0
+"2007-11-01",0,0,0,0,0,0
+"2007-12-01",0,0,0,0,0,0
+"2008-01-01",0,0,0,0,0,0
+"2008-02-01",0,0,0,0,0,0
+"2008-03-01",0,0,0,0,0,0
+"2008-04-01",19,0,0,0,0,0
+"2008-05-01",0,0,0,0,0,0
+"2008-06-01",0,0,0,0,0,0
+"2008-07-01",0,0,0,0,0,0
+"2008-08-01",0,0,0,0,0,0
+"2008-09-01",0,0,0,0,0,0
+"2008-10-01",0,0,0,0,0,0
+"2008-11-01",0,0,0,0,0,0
+"2008-12-01",0,0,0,0,0,0
+"2009-01-01",0,0,0,0,0,0
+"2009-02-01",0,0,0,0,0,0
+"2009-03-01",0,0,15,0,0,0
+"2009-04-01",0,0,0,0,0,0
+"2009-05-01",0,0,0,0,0,0
+"2009-06-01",0,0,0,0,0,0
+"2009-07-01",0,0,0,0,0,0
+"2009-08-01",0,0,0,0,0,0
+"2009-09-01",0,0,0,0,0,0
+"2009-10-01",0,0,0,0,0,0
+"2009-11-01",0,0,0,0,0,0
+"2009-12-01",0,0,0,0,0,0
+"2010-01-01",0,0,0,0,0,0
+"2010-02-01",0,0,0,0,0,0
+"2010-03-01",0,0,0,0,0,0
+"2010-04-01",0,0,0,0,0,0
+"2010-05-01",0,0,0,0,0,0
+"2010-06-01",0,0,0,0,0,0
+"2010-07-01",0,0,0,0,0,0
+"2010-08-01",0,0,0,0,0,0
+"2010-09-01",0,0,0,0,0,0
+"2010-10-01",0,0,0,0,0,0
+"2010-11-01",0,0,0,0,0,0
+"2010-12-01",0,0,0,0,0,0
+"2011-01-01",0,0,0,0,0,0
+"2011-02-01",0,0,0,0,0,0
+"2011-03-01",0,0,0,0,0,0
+"2011-04-01",0,0,0,0,0,0
+"2011-05-01",0,0,0,0,0,0
+"2011-06-01",0,0,0,0,0,0
+"2011-07-01",0,0,0,0,0,0
+"2011-08-01",0,0,0,0,0,0
+"2011-09-01",0,0,0,0,0,0
+"2011-10-01",0,0,0,0,0,0
+"2011-11-01",0,0,0,0,0,0
+"2011-12-01",0,0,0,0,0,0
+"2012-01-01",0,0,0,0,0,0
+"2012-02-01",0,0,0,0,0,0
+"2012-03-01",0,0,0,0,0,0
+"2012-04-01",0,0,0,0,0,0
+"2012-05-01",0,0,0,0,0,0
+"2012-06-01",0,0,0,0,0,0
+"2012-07-01",0,0,0,0,0,0
+"2012-08-01",0,0,0,0,0,0
+"2012-09-01",0,0,0,0,0,0
+"2012-10-01",0,0,0,0,0,0
+"2012-11-01",0,0,0,6,0,0
+"2012-12-01",0,0,0,0,6,0
+"2013-01-01",0,0,0,0,0,0
+"2013-02-01",0,0,0,0,0,0
+"2013-03-01",0,0,0,0,0,0
+"2013-04-01",0,0,0,0,0,0
+"2013-05-01",0,0,0,0,0,0
+"2013-06-01",0,0,0,0,0,0
+"2013-07-01",0,0,0,0,0,0
+"2013-08-01",0,0,0,0,0,0
+"2013-09-01",0,0,0,0,0,0
+"2013-10-01",0,0,0,0,0,0
+"2013-11-01",0,0,0,0,0,0
+"2013-12-01",0,0,0,0,0,0
+"2014-01-01",0,0,0,0,0,0
+"2014-02-01",10,0,6,0,0,0
+"2014-03-01",44,0,6,0,6,0
+"2014-04-01",10,0,4,0,0,0
+"2014-05-01",6,0,0,0,0,0
+"2014-06-01",6,0,0,0,4,0
+"2014-07-01",0,0,0,0,0,0
+"2014-08-01",0,0,0,0,0,0
+"2014-09-01",0,0,0,0,0,0
+"2014-10-01",0,0,0,0,0,0
+"2014-11-01",0,0,0,0,0,0
+"2014-12-01",0,0,0,0,0,0
+"2015-01-01",8,0,4,0,6,0
+"2015-02-01",4,0,0,0,0,0
+"2015-03-01",7,0,0,0,4,0
+"2015-04-01",4,0,4,0,6,0
+"2015-05-01",6,0,0,0,4,0
+"2015-06-01",4,0,0,0,4,0
+"2015-07-01",4,0,0,0,0,0
+"2015-08-01",0,0,0,0,0,0
+"2015-09-01",0,0,0,0,0,0
+"2015-10-01",0,0,0,0,0,0
+"2015-11-01",4,0,0,0,0,0
+"2015-12-01",6,0,0,0,4,0
+"2016-01-01",11,0,6,0,4,0
+"2016-02-01",6,0,0,0,6,0
+"2016-03-01",6,0,4,0,6,0
+"2016-04-01",4,0,0,0,0,0
+"2016-05-01",6,0,0,0,4,0
+"2016-06-01",0,0,0,0,0,0
+"2016-07-01",0,0,0,0,0,0
+"2016-08-01",0,0,0,0,0,0
+"2016-09-01",0,0,0,0,0,0
+"2016-10-01",0,0,0,0,0,0
+"2016-11-01",0,0,0,0,0,0
+"2016-12-01",0,0,0,0,0,0
+"2017-01-01",0,0,0,0,6,0
+"2017-02-01",0,0,0,0,0,0
+"2017-03-01",0,0,3,0,0,0
+"2017-04-01",0,0,0,4,0,0
+"2017-05-01",4,0,0,0,4,0
+"2017-06-01",6,0,6,4,0,0
+"2017-07-01",0,0,0,0,0,0
+"2017-08-01",0,0,6,0,0,0
+"2017-09-01",8,0,6,0,4,0
+"2017-10-01",4,0,4,0,0,0
+"2017-11-01",11,0,7,0,4,0
+"2017-12-01",18,0,21,0,6,0
+"2018-01-01",39,7,35,0,21,0
+"2018-02-01",60,19,31,4,46,15
+"2018-03-01",28,22,15,7,14,18
+"2018-04-01",21,10,14,4,14,8
+"2018-05-01",17,8,8,0,13,6
+"2018-06-01",38,17,11,8,28,15
+"2018-07-01",24,13,4,4,18,10
+"2018-08-01",28,35,8,7,25,29
+"2018-09-01",28,15,4,4,25,13
+"2018-10-01",21,15,6,4,17,8
+"2018-11-01",47,31,17,4,35,22
+"2018-12-01",57,29,17,7,43,25
+"2019-01-01",26,14,6,0,22,11
+"2019-02-01",39,21,6,0,19,14
+"2019-03-01",19,10,0,0,14,7
+"2019-04-01",11,6,4,0,8,0
+"2019-05-01",14,4,3,0,10,6
+"2019-06-01",13,4,0,0,8,4
+"2019-07-01",14,6,0,0,8,4
+"2019-08-01",11,4,0,0,11,3
+"2019-09-01",10,3,4,0,6,4
+"2019-10-01",11,4,0,0,8,4
+"2019-11-01",7,8,3,0,8,6
+"2019-12-01",15,8,0,3,13,7
+"2020-01-01",11,7,0,0,13,7
+"2020-02-01",10,6,0,0,8,6
+"2020-03-01",15,7,0,0,10,6
+"2020-04-01",8,6,0,0,8,4
+"2020-05-01",8,4,0,0,4,3
+"2020-06-01",7,4,0,0,6,3
+"2020-07-01",6,6,0,0,4,3
+"2020-08-01",6,3,0,0,6,0
+"2020-09-01",0,3,0,0,0,0
+"2020-10-01",0,0,0,0,0,0
+"2020-11-01",3,3,0,0,0,4
+"2020-12-01",0,0,0,0,0,0
+"2021-01-01",6,3,6,0,0,0
+"2021-02-01",0,6,0,0,0,0
+"2021-03-01",4,0,0,0,0,0
+"2021-04-01",7,4,0,0,0,0
+"2021-05-01",26,63,4,6,17,53
+"2021-06-01",18,35,6,4,7,28
+"2021-07-01",13,25,3,4,6,18
+"2021-08-01",6,8,0,0,0,0
+"2021-09-01",7,8,0,3,0,6
+"2021-10-01",0,6,0,0,0,0
+"2021-11-01",4,8,0,0,4,0
+"2021-12-01",4,11,0,3,4,3
+"2022-01-01",10,39,6,6,6,29
+"2022-02-01",4,25,0,0,0,19
+"2022-03-01",4,14,0,3,0,10
+"2022-04-01",6,17,0,3,3,13
+"2022-05-01",28,93,7,26,21,67
+"2022-06-01",60,86,22,25,40,79
+"2022-07-01",29,49,6,4,22,39
+"2022-08-01",22,31,3,0,19,25
+"2022-09-01",24,39,4,4,19,33
+"2022-10-01",17,38,3,6,15,32
+"2022-11-01",53,99,11,15,46,81
+"2022-12-01",38,74,8,11,32,58
+"2023-01-01",25,36,4,6,22,32
+"2023-02-01",15,31,0,4,13,25
+"2023-03-01",17,26,3,0,15,19
+"2023-04-01",13,25,0,7,7,14
+"2023-05-01",11,25,0,3,10,18
+"2023-06-01",11,33,0,4,7,25
+"2023-07-01",8,22,0,3,7,17
+"2023-08-01",10,33,0,4,8,25
+"2023-09-01",8,43,0,4,7,36
+"2023-10-01",8,46,0,3,6,36
+"2023-11-01",10,35,0,0,8,28
+"2023-12-01",7,24,0,0,6,18
+"2024-01-01",10,28,0,0,6,21
+"2024-02-01",4,19,0,0,3,15
+"2024-03-01",4,19,0,0,0,13
+"2024-04-01",0,14,3,0,0,10
+"2024-05-01",3,10,0,0,0,7
+"2024-06-01",4,14,0,0,4,8
+"2024-07-01",6,17,0,0,4,13
+"2024-08-01",0,18,0,0,0,14
+"2024-09-01",3,19,0,0,0,15
+"2024-10-01",0,15,0,0,0,11
+"2024-11-01",0,17,3,0,0,7
+"2024-12-01",0,18,0,0,0,6
+"2025-01-01",0,13,0,0,0,4
+"2025-02-01",0,19,0,4,0,8
+"2025-03-01",0,15,0,3,0,10
+"2025-04-01",0,14,0,0,0,8
+"2025-05-01",0,7,0,0,0,3
+"2025-06-01",0,14,0,0,0,7
+"2025-07-01",3,10,0,0,0,6
+"2025-08-01",0,13,0,0,0,6
+"2025-09-01",0,7,0,0,0,3
+"2025-10-01",0,15,0,0,0,6
+"2025-11-01",11,26,7,0,4,15
+"2025-12-01",6,19,4,7,0,14
+"2026-01-01",8,24,0,4,4,17
+"2026-02-01",31,53,26,8,22,44
+"2026-03-01",8,33,4,0,4,22
+"2026-04-01",10,28,0,0,7,22
+"2026-05-01",10,33,1,1,6,19
+</script>
+
+<script>
+// Bitcoin monthly closes from CryptoCompare (verified Jun 2026), aligned 1:1 with MONTHS.
+// The last entry is overwritten by the live CoinGecko spot price on load.
+const BTC_MONTHLY = [
+  0.068,0.060,0.062,0.193,0.208,0.300,                                                      // 2010
+  0.550,0.870,0.785,3.55,8.74,16.1,13.3,8.20,5.14,3.25,2.97,4.72,                           // 2011
+  5.48,4.86,4.91,4.95,5.18,6.69,9.35,10.2,12.4,11.2,12.6,13.5,                              // 2012
+  20.4,33.4,93.0,139,129,97.5,106,141,142,211,1206,806,                                     // 2013
+  939,574,445,446,628,635,590,482,388,338,375,318,                                          // 2014
+  219,254,244,236,230,264,284,229,236,311,378,430,                                          // 2015
+  370,436,416,449,529,670,622,574,608,699,742,963,                                          // 2016
+  965,1189,1079,1352,2303,2481,2883,4735,4361,6451,9947,13850,                              // 2017
+  10227,10334,6944,9248,7502,6385,7735,7027,6624,6343,4010,3747,                            // 2018
+  3434,3823,4113,5351,8551,10769,10089,9625,8315,9158,7572,7184,                            // 2019
+  9342,8545,6424,8638,9450,9136,11353,11658,10779,13803,19687,28972,                        // 2020
+  33143,45261,58794,57758,37291,35056,41475,47159,43829,61350,56975,46197,                  // 2021
+  38495,43189,45523,37650,31782,19908,23308,20050,19426,20493,17162,16531,                  // 2022
+  23130,23137,28475,29237,27220,30471,29231,25937,26964,34658,37730,42280,                  // 2023
+  42555,61180,71313,60634,67482,62686,64618,58989,63315,70208,96474,93392,                  // 2024
+  102412,84323,82540,94186,104655,107170,115765,108274,114078,109581,90381,87519,           // 2025
+  78664,66985,68234,76319,73602,60491                                                       // 2026-01..06
+];
+// All-time high (intraday close, $) and the day it occurred — used for headline stats.
+const BTC_ATH = 124723;
+const BTC_ATH_DATE = '2025-10-06';
+
+function buildMonths(start, count){
+  const [y0, m0] = start.split('-').map(Number);
+  const out = [];
+  for (let i = 0; i < count; i++){
+    const m = ((m0 - 1 + i) % 12) + 1;
+    const y = y0 + Math.floor((m0 - 1 + i) / 12);
+    out.push(`${y}-${String(m).padStart(2,'0')}`);
+  }
+  return out;
+}
+const MONTHS = buildMonths('2010-07', BTC_MONTHLY.length);
+
+// --- Parse the embedded CSV and compute the combined "is crypto dead" index ---
+function parseCSV(text){
+  const lines = text.trim().split(/\r?\n/);
+  const header = lines.shift();
+  const rows = lines.map(l => {
+    // Date column is quoted "YYYY-MM-DD", followed by 6 ints
+    const m = l.match(/^"(\d{4}-\d{2})-\d{2}",(.+)$/);
+    if (!m) return null;
+    const nums = m[2].split(',').map(Number);
+    return { month: m[1], sum: nums.reduce((a,b)=>a+b,0) };
+  }).filter(Boolean);
+  return rows;
+}
+const trendsCsvText = document.getElementById('trends-csv').textContent;
+const trendsRows = parseCSV(trendsCsvText);
+const peakRow = trendsRows.reduce((a,b)=> b.sum > a.sum ? b : a, trendsRows[0]);
+const sumByMonth = Object.fromEntries(trendsRows.map(r => [r.month, r.sum]));
+const SEARCH = MONTHS.map(m => {
+  const s = sumByMonth[m];
+  return s == null ? null : Math.round((s / peakRow.sum) * 100);
+});
+// Tail months that exist in the BTC series but not yet in CSV remain null.
+
+// --- Static stats derived from data ---
+const ATH = BTC_ATH;
+const ATH_MONTH = BTC_ATH_DATE.slice(0,7);
+
+function fmtMonth(ym){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(Date.UTC(y, m-1, 1));
+  return d.toLocaleDateString('en-US',{month:'short', year:'numeric', timeZone:'UTC'});
+}
+function fmtDay(iso){
+  const d = new Date(iso + 'T00:00:00Z');
+  return d.toLocaleDateString('en-US',{month:'short', day:'numeric', year:'numeric', timeZone:'UTC'});
+}
+function fmtUsd(v){
+  if (v >= 1000) return '$' + Math.round(v).toLocaleString();
+  return '$' + v.toFixed(2);
+}
+
+document.getElementById('s-ath').textContent = fmtUsd(ATH);
+document.getElementById('s-ath-when').textContent = fmtDay(BTC_ATH_DATE);
+document.getElementById('s-peakmonth').textContent = fmtMonth(peakRow.month);
+
+// --- CSV download (from embedded text, so it works offline too) ---
+function downloadCsv(){
+  const blob = new Blob([trendsCsvText], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'is_crypto_dead_search_trends_2004-2026.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 1000);
+}
+document.getElementById('dlbtn').addEventListener('click', downloadCsv);
+// Also rewire the in-text "download the raw CSV" link to use the same blob,
+// so the page works on file:// without the sibling CSV file present.
+document.getElementById('srcdl').addEventListener('click', e => { e.preventDefault(); downloadCsv(); });
+
+// --- Live BTC price (CoinGecko, no key required, CORS-enabled) ---
+const priceEl = document.getElementById('s-price');
+const deltaEl = document.getElementById('s-price-delta');
+const drawdownEl = document.getElementById('s-drawdown');
+const liveBadge = document.getElementById('liveBadge');
+const liveLabel = document.getElementById('liveLabel');
+
+let lastLivePrice = null;
+function setLiveBadge(state, label){
+  liveBadge.classList.remove('on','err');
+  if (state) liveBadge.classList.add(state);
+  liveLabel.textContent = label;
+}
+function applyPrice(price){
+  const prev = lastLivePrice;
+  lastLivePrice = price;
+  BTC_MONTHLY[BTC_MONTHLY.length - 1] = price;
+
+  priceEl.textContent = fmtUsd(price);
+  if (prev != null && prev !== price){
+    priceEl.classList.remove('flash','down');
+    void priceEl.offsetWidth;
+    priceEl.classList.add('flash');
+    if (price < prev) priceEl.classList.add('down');
+    const ch = price - prev;
+    const pct = (ch / prev) * 100;
+    deltaEl.textContent = (ch >= 0 ? '▲ ' : '▼ ') + fmtUsd(Math.abs(ch)) + ' (' + (ch>=0?'+':'') + pct.toFixed(2) + '%) since last tick';
+    deltaEl.className = 'delta ' + (ch >= 0 ? 'up' : 'down');
+  } else if (prev == null){
+    deltaEl.textContent = 'live spot · auto-refreshing';
+    deltaEl.className = 'delta';
+  }
+  const dd = (price - ATH) / ATH * 100;
+  drawdownEl.textContent = (dd >= 0 ? '+' : '') + dd.toFixed(1) + '%';
+
+  draw();
+}
+
+async function fetchPrice(){
+  try{
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd', {cache:'no-store'});
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json();
+    const p = j && j.bitcoin && j.bitcoin.usd;
+    if (typeof p !== 'number') throw new Error('bad payload');
+    setLiveBadge('on','live');
+    applyPrice(p);
+  }catch(err){
+    setLiveBadge('err','offline');
+    if (lastLivePrice == null) applyPrice(BTC_MONTHLY[BTC_MONTHLY.length - 1]);
+  }
+}
+
+// First fetch on load, then refresh every 60s.
+fetchPrice();
+setInterval(fetchPrice, 60_000);
+
+// ========================= CHART =========================
+const cv = document.getElementById('c');
+const ctx = cv.getContext('2d');
+const tipEl = document.getElementById('tip');
+const N = MONTHS.length;
+
+const PAD = {l:56, r:46, t:34, b:34};
+const PMAX = Math.max(Math.max(...BTC_MONTHLY), BTC_ATH) * 1.1;
+const SMAX = 110;
+const priceTicks = niceTicks(0, PMAX, 5);
+const searchTicks = [0,25,50,75,100];
+
+function niceTicks(min, max, count){
+  const span = max - min;
+  const step0 = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const m = step0 / mag;
+  let step;
+  if (m < 1.5) step = 1*mag;
+  else if (m < 3) step = 2*mag;
+  else if (m < 7) step = 5*mag;
+  else step = 10*mag;
+  const ticks = [];
+  for (let v = 0; v <= max + 1; v += step) ticks.push(Math.round(v));
+  return ticks;
+}
+
+// Search-side annotations on the navy line. The peak label covers the full 2022
+// crash sequence (Terra → Luna → 3AC → Celsius → FTX) — the footer disambiguates.
+// The 3rd value is a width threshold below which the annotation is hidden, to keep
+// the mobile chart readable.
+const events = [
+  ['2018-12','2018 winter',  640],
+  ['2021-05','China ban',    560],
+  ['2022-06','2022 crash',   0  ],
+  ['2026-02','2026 selloff', 0  ],
+];
+// Price-side annotation: the intraday all-time high, drawn above the monthly line.
+const priceMarkers = [
+  ['2025-10', BTC_ATH, '$' + (BTC_ATH/1000).toFixed(0) + 'k · Oct 6, 2025', 0],
+];
+
+let W = 0, H = 0, hover = -1;
+function xFor(i){ return PAD.l + (N <= 1 ? 0 : (i/(N-1)) * (W - PAD.l - PAD.r)); }
+function yPrice(v){ return PAD.t + (1 - v/PMAX) * (H - PAD.t - PAD.b); }
+function yS(v){ return PAD.t + (1 - v/SMAX) * (H - PAD.t - PAD.b); }
+
+function searchArea(){
+  const idx = [];
+  for (let i = 0; i < N; i++) if (SEARCH[i] != null) idx.push(i);
+  if (!idx.length) return;
+  ctx.beginPath();
+  ctx.moveTo(xFor(idx[0]), yS(0));
+  idx.forEach(i => ctx.lineTo(xFor(i), yS(SEARCH[i])));
+  ctx.lineTo(xFor(idx[idx.length - 1]), yS(0));
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(36,57,92,0.15)';
+  ctx.fill();
+}
+function stroke(arr, color, w, scaleFn){
+  ctx.beginPath();
+  let started = false;
+  for (let i = 0; i < N; i++){
+    const v = arr[i];
+    if (v == null){ started = false; continue; }
+    const x = xFor(i), y = scaleFn(v);
+    if (!started){ ctx.moveTo(x, y); started = true; }
+    else ctx.lineTo(x, y);
+  }
+  ctx.lineWidth = w;
+  ctx.strokeStyle = color;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.stroke();
+}
+
+function fmtPriceTick(v){
+  if (v === 0) return '$0';
+  if (v >= 1000) return '$' + (v/1000) + 'k';
+  return '$' + v;
+}
+function roundRect(ctx, x, y, w, h, r, fill, stroke){
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
+}
+
+function draw(){
+  const r = cv.parentElement.getBoundingClientRect();
+  W = r.width; H = r.height;
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = W * dpr; cv.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.font = '11px "IBM Plex Mono",monospace';
+  ctx.textBaseline = 'middle';
+  priceTicks.forEach(t => {
+    const y = yPrice(t);
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
+    ctx.fillStyle = '#c96e00'; ctx.textAlign = 'right';
+    ctx.fillText(fmtPriceTick(t), PAD.l - 8, y);
+  });
+  ctx.textAlign = 'left';
+  searchTicks.forEach(s => { ctx.fillStyle = '#3a5277'; ctx.fillText(String(s), W - PAD.r + 8, yS(s)); });
+
+  ctx.fillStyle = '#6f6c63';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  // Show every year on wide screens, every 2 years on medium, every 3 years on small.
+  const yearStep = W < 480 ? 3 : (W < 720 ? 2 : 1);
+  for (let i = 0; i < N; i++) if (MONTHS[i].endsWith('-01')){
+    const y = parseInt(MONTHS[i].slice(0,4), 10);
+    const x = xFor(i);
+    ctx.strokeStyle = 'rgba(0,0,0,0.045)';
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H - PAD.b); ctx.stroke();
+    if (y % yearStep === 0) ctx.fillText(String(y), x, H - PAD.b + 8);
+  }
+
+  searchArea();
+  stroke(SEARCH, 'rgba(35,57,92,0.85)', 1.4, yS);
+
+  stroke(BTC_MONTHLY, 'rgba(255,255,255,0.9)', 5, yPrice);
+  stroke(BTC_MONTHLY, '#ee8400', 2.8, yPrice);
+
+  // Live-price dot at the right edge, with a "Now" callout summarising live state.
+  if (lastLivePrice != null){
+    const lx = xFor(N - 1), ly = yPrice(BTC_MONTHLY[N - 1]);
+    ctx.beginPath(); ctx.arc(lx, ly, 9, 0, 7);
+    ctx.fillStyle = 'rgba(238,132,0,0.18)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(lx, ly, 4, 0, 7);
+    ctx.fillStyle = '#ee8400'; ctx.strokeStyle = '#fefefe'; ctx.lineWidth = 2;
+    ctx.fill(); ctx.stroke();
+
+    // Compact "Now" callout. Skip on very narrow screens; one line on small, two on wide.
+    if (W >= 520){
+      const dd = (lastLivePrice - ATH) / ATH * 100;
+      const ddTxt = (dd >= 0 ? '+' : '') + dd.toFixed(0) + '%';
+      const priceTxt = '$' + Math.round(lastLivePrice).toLocaleString();
+      const twoLine = W >= 760;
+      ctx.font = '600 11px "IBM Plex Mono",monospace';
+      const line1 = 'Now · ' + priceTxt;
+      const line2 = ddTxt + ' from peak';
+      const tw = twoLine
+        ? Math.max(ctx.measureText(line1).width, ctx.measureText(line2).width)
+        : ctx.measureText(line1 + '  ' + ddTxt).width;
+      const bh = twoLine ? 36 : 22;
+      const boxX = lx - tw - 22;
+      const boxY = ly - (twoLine ? 32 : 26);
+      if (boxX > PAD.l + 10){
+        ctx.fillStyle = 'rgba(254,254,254,0.94)';
+        ctx.strokeStyle = '#ee8400'; ctx.lineWidth = 1;
+        roundRect(ctx, boxX, boxY, tw + 14, bh, 5, true, true);
+        ctx.fillStyle = '#c96e00'; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+        if (twoLine){
+          ctx.fillText(line1, boxX + 7, boxY + 15);
+          ctx.font = '500 10.5px "IBM Plex Mono",monospace';
+          ctx.fillStyle = '#b23a48';
+          ctx.fillText(line2, boxX + 7, boxY + 29);
+        } else {
+          ctx.fillText(line1, boxX + 7, boxY + 15);
+          ctx.fillStyle = '#b23a48';
+          ctx.fillText('  ' + ddTxt, boxX + 7 + ctx.measureText(line1).width, boxY + 15);
+        }
+      }
+    }
+  }
+
+  ctx.font = '600 10.5px "IBM Plex Mono",monospace';
+  events.forEach(([mk, txt, minW]) => {
+    if (W < (minW || 0)) return;
+    const i = MONTHS.indexOf(mk);
+    if (i < 0 || SEARCH[i] == null) return;
+    const x = xFor(i), y = yS(SEARCH[i]);
+    const below = y < PAD.t + 44;
+    const ly2 = below ? y + 17 : y - 27;
+    ctx.fillStyle = '#23395c';
+    ctx.beginPath(); ctx.arc(x, y, 3.2, 0, 7); ctx.fill();
+    ctx.globalAlpha = .5; ctx.strokeStyle = '#23395c'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y);
+    ctx.lineTo(x, below ? ly2 - 11 : ly2 + 8);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = x > W - 110 ? 'right' : (x < 120 ? 'left' : 'center');
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(254,254,254,0.92)';
+    ctx.strokeText(txt, x, ly2);
+    ctx.fillStyle = '#23395c'; ctx.fillText(txt, x, ly2);
+  });
+
+  // Price-side annotation: all-time intraday high (above the monthly-close line).
+  priceMarkers.forEach(([mk, price, txt, minW]) => {
+    if (W < (minW || 0)) return;
+    const i = MONTHS.indexOf(mk);
+    if (i < 0) return;
+    const x = xFor(i);
+    const y = yPrice(price);
+    const yLine = yPrice(BTC_MONTHLY[i]);
+    // dashed connector from the line value up to the intraday-high marker
+    ctx.save();
+    ctx.setLineDash([2,3]); ctx.strokeStyle = 'rgba(238,132,0,0.55)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(x, yLine); ctx.lineTo(x, y); ctx.stroke();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(x, y, 4, 0, 7);
+    ctx.fillStyle = '#ee8400'; ctx.strokeStyle = '#fefefe'; ctx.lineWidth = 2;
+    ctx.fill(); ctx.stroke();
+    const ly2 = y - 12;
+    ctx.font = '600 10.5px "IBM Plex Mono",monospace';
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = x > W - 110 ? 'right' : 'center';
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(254,254,254,0.92)';
+    ctx.strokeText(txt, x, ly2);
+    ctx.fillStyle = '#c96e00'; ctx.fillText(txt, x, ly2);
+  });
+
+  if (hover >= 0){
+    const x = xFor(hover);
+    ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, H - PAD.b); ctx.stroke();
+    ctx.setLineDash([]);
+    const py = yPrice(BTC_MONTHLY[hover]);
+    ctx.fillStyle = '#ee8400'; ctx.strokeStyle = '#fefefe'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(x, py, 4, 0, 7); ctx.fill(); ctx.stroke();
+  }
+}
+
+function showTip(i){
+  const ym = MONTHS[i];
+  const isLast = i === N - 1;
+  const s = SEARCH[i];
+  const priceStr = fmtUsd(BTC_MONTHLY[i]);
+  const liveTag = isLast && lastLivePrice != null ? ' <span style="color:#1d7a3a">· live</span>' : '';
+  tipEl.innerHTML =
+    '<b>' + fmtMonth(ym) + '</b>' + liveTag + '<br>' +
+    '<span style="color:#c96e00">Bitcoin: ' + priceStr + '</span><br>' +
+    '<span style="color:#23395c">Death-search index: ' + (s == null ? '&mdash;' : s + ' / 100') + '</span>';
+  tipEl.style.opacity = 1;
+  const tw = tipEl.offsetWidth;
+  const left = Math.max(tw/2 + 4, Math.min(W - tw/2 - 4, xFor(i)));
+  tipEl.style.left = left + 'px';
+  tipEl.style.transform = 'translateX(-50%)';
+  tipEl.style.top = (PAD.t + 4) + 'px';
+}
+
+cv.parentElement.addEventListener('mousemove', e => {
+  const r = cv.getBoundingClientRect();
+  const mx = e.clientX - r.left;
+  let i = Math.round(((mx - PAD.l) / (W - PAD.l - PAD.r)) * (N - 1));
+  i = Math.max(0, Math.min(N - 1, i));
+  hover = i; draw(); showTip(i);
+});
+cv.parentElement.addEventListener('mouseleave', () => { hover = -1; tipEl.style.opacity = 0; draw(); });
+
+new ResizeObserver(draw).observe(cv.parentElement);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
+draw();
+</script>
+</body>
+</html>
