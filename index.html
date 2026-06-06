@@ -87,9 +87,8 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="kicker">Worldwide search interest &middot; Bitcoin price &middot; 2010&ndash;2026</div>
   <h1>Is Crypto Dead Yet<span class="q">?</span></h1>
-  <div class="sub">Every time bitcoin crashes, the world googles <i>is crypto dead?</i> Every time so far, the answer has been no. The 2026 selloff has brought the question back.</div>
+  <div class="sub">Every time bitcoin crashes, the world googles <i>is crypto dead?</i> Every time so far, the answer has been no.</div>
 
   <div class="stats">
     <div class="stat">
@@ -131,7 +130,7 @@
 
   <div class="verdict">Every past obituary has been wrong. Whether 2026&rsquo;s is the exception is the one thing the chart cannot say.</div>
   <div class="foot">
-    <p><b>The pattern.</b> Panic peaked twice in 2022: in <b>June</b> (Terra, Luna and Celsius collapsed in succession) and again in <b>November</b> (FTX failed). Bitcoin bottomed near $16,000 both times &mdash; and by October 6, 2025 had reached <b>$126,287</b>. The February 2026 selloff brought the chant back, at about 60% of the 2022 volume.</p>
+    <p><b>The pattern.</b> Panic peaked twice in 2022: in <b>June</b> (Terra, Luna and Celsius collapsed in succession) and again in <b>November</b> (FTX failed). Bitcoin bottomed near $16,000 both times &mdash; and by October 6, 2025 had reached <b>$126,198</b>. The February 2026 selloff brought the chant back, at about 60% of the 2022 volume.</p>
     <p><b>The one number.</b> The navy line sums six Google search phrasings &mdash; <i>bitcoin dead, crypto dead, bitcoin is dead, crypto is dead, is bitcoin dead, is crypto dead</i> &mdash; from one worldwide Trends query, rescaled so the all-time peak equals 100.</p>
     <p><b>How to read it.</b> Bitcoin (orange, left axis) is linear, so the early years sit near the floor. Search index uses the right axis. The current bitcoin price updates live; search data runs through May 2026.</p>
     <p><b>Sources.</b> Bitcoin: monthly closes from <a href="https://www.cryptocompare.com" rel="noopener" target="_blank">CryptoCompare</a>, current month from <a href="https://www.coingecko.com/en/api" rel="noopener" target="_blank">CoinGecko</a>. Search: Google Trends (worldwide, monthly) &mdash; <a id="srcdl" href="time_series_Worldwide_20031231-1600_20260606-1519.csv" download>download the CSV</a> or <a href="https://trends.google.com/trends/explore?date=all&q=%22bitcoin%20dead%22,%22crypto%20dead%22,%22bitcoin%20is%20dead%22,%22crypto%20is%20dead%22,%22is%20bitcoin%20dead%22,%22is%20crypto%20dead%22" rel="noopener" target="_blank">re-run the query</a>.</p>
@@ -432,8 +431,10 @@ const BTC_MONTHLY = [
   102412,84323,82540,94186,104655,107170,115765,108274,114078,109581,90381,87519,           // 2025
   78664,66985,68234,76319,73602,60491                                                       // 2026-01..06
 ];
-// All-time high (intraday close, $) and the day it occurred — used for headline stats.
-const BTC_ATH = 124723;
+// All-time high (intraday peak, $) and the day it occurred — used for headline stats.
+// Source: Yahoo Finance / CoinMarketCap; cross-checked vs CoinGecko ($126,080) and
+// CryptoCompare daily high ($126,287). All three agree on Oct 6, 2025.
+const BTC_ATH = 126198;
 const BTC_ATH_DATE = '2025-10-06';
 
 function buildMonths(start, count){
