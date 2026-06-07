@@ -752,7 +752,11 @@ function draw(){
         : ctx.measureText(line1 + '  ' + ddTxt).width;
       const bh = twoLine ? 36 : 22;
       const boxX = lx - tw - 22;
-      const boxY = ly - (twoLine ? 32 : 26);
+      // Default: position above the live dot, with a 6px gap.
+      // In log mode the dot can sit very close to the chart top (and the ATH marker),
+      // so if there isn't enough room above, drop the box below the dot instead.
+      const minClearAbove = PAD.t + 24 + bh; // leaves room for the ATH label above
+      const boxY = ly >= minClearAbove ? ly - 6 - bh : ly + 8;
       if (boxX > PAD.l + 10){
         ctx.fillStyle = 'rgba(254,254,254,0.94)';
         ctx.strokeStyle = '#ee8400'; ctx.lineWidth = 1;
