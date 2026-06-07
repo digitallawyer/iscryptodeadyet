@@ -67,6 +67,14 @@
       padding:8px 12px;border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s}
   .dl:hover{background:#fff;border-color:#cfcdc1}
   .dl svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .scale{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;
+         font:500 11px "IBM Plex Mono",monospace;letter-spacing:.08em;text-transform:uppercase;background:var(--bg)}
+  .scale span{align-self:center;padding:0 10px 0 2px;color:var(--muted);font-size:10px;letter-spacing:.12em}
+  .scale button{background:transparent;color:#6f6c63;border:none;padding:8px 11px;cursor:pointer;
+                border-left:1px solid var(--line);transition:background .15s,color .15s}
+  .scale button:first-of-type{border-left:none}
+  .scale button:hover:not(.active){background:#fff;color:#3a382f}
+  .scale button.active{background:#1a1813;color:var(--bg)}
 
   .cw{position:relative;height:600px}
   @media(max-width:900px){.cw{height:520px}}
@@ -121,6 +129,11 @@
         <span><i class="sw-btc"></i>Bitcoin price, USD</span>
         <span><i class="sw-navy"></i>Search volume for &ldquo;is crypto dead?&rdquo; and variants (peak = 100)</span>
       </div>
+      <div class="scale" role="group" aria-label="Bitcoin price scale">
+        <span>Scale</span>
+        <button id="scaleLinear" class="active" type="button">Linear</button>
+        <button id="scaleLog" type="button">Log</button>
+      </div>
       <button class="dl" id="dlbtn" type="button" aria-label="Download source data CSV">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14"/></svg>
         <span>Data</span>
@@ -132,7 +145,7 @@
   <div class="foot">
     <p><b>Events shown.</b> Search volume peaked in <b>June 2022</b> (index = 100; Terra, Luna and Celsius collapses) and <b>November 2022</b> (98; FTX failure). Bitcoin&rsquo;s monthly close fell to $16,531 in December 2022, then reached an intraday all-time high of <b>$126,198</b> on October 6, 2025. The February 2026 reading of 59 is the highest since November 2022.</p>
     <p><b>The one number.</b> The navy line sums six Google search phrasings &mdash; <i>bitcoin dead, crypto dead, bitcoin is dead, crypto is dead, is bitcoin dead, is crypto dead</i> &mdash; from one worldwide Trends query, rescaled so the all-time peak equals 100.</p>
-    <p><b>How to read it.</b> Bitcoin (orange, left axis) is linear, so the early years sit near the floor. Search index uses the right axis. The current bitcoin price updates live; search data runs through May 2026.</p>
+    <p><b>How to read it.</b> Bitcoin price uses the left axis &mdash; toggle <i>Linear</i> or <i>Log</i> above. Search volume uses the right axis. The current bitcoin price updates live; search data runs through May 2026.</p>
     <p><b>Sources.</b> Bitcoin: monthly closes from <a href="https://www.cryptocompare.com" rel="noopener" target="_blank">CryptoCompare</a>, current month from <a href="https://www.coingecko.com/en/api" rel="noopener" target="_blank">CoinGecko</a>. Search: Google Trends (worldwide, monthly) &mdash; <a id="srcdl" href="time_series_Worldwide_20031231-1600_20260606-1519.csv" download>download the CSV</a> or <a href="https://trends.google.com/trends/explore?date=all&q=%22bitcoin%20dead%22,%22crypto%20dead%22,%22bitcoin%20is%20dead%22,%22crypto%20is%20dead%22,%22is%20bitcoin%20dead%22,%22is%20crypto%20dead%22" rel="noopener" target="_blank">re-run the query</a>.</p>
   </div>
 </div>
@@ -574,9 +587,18 @@ const N = MONTHS.length;
 
 const PAD = {l:56, r:46, t:34, b:34};
 const PMAX = Math.max(Math.max(...BTC_MONTHLY), BTC_ATH) * 1.1;
+const LOG_FLOOR = 0.05; // bottom of the log axis ($0.05); data minimum is ~$0.07
+const LOG_TICKS = [0.1, 1, 10, 100, 1000, 10000, 100000];
 const SMAX = 110;
-const priceTicks = niceTicks(0, PMAX, 5);
 const searchTicks = [0,25,50,75,100];
+
+let priceScale = (function(){
+  try { return localStorage.getItem('icdy-scale') === 'log' ? 'log' : 'linear'; }
+  catch(e){ return 'linear'; }
+})();
+function getPriceTicks(){
+  return priceScale === 'log' ? LOG_TICKS : niceTicks(0, PMAX, 5);
+}
 
 function niceTicks(min, max, count){
   const span = max - min;
@@ -610,7 +632,16 @@ const priceMarkers = [
 
 let W = 0, H = 0, hover = -1;
 function xFor(i){ return PAD.l + (N <= 1 ? 0 : (i/(N-1)) * (W - PAD.l - PAD.r)); }
-function yPrice(v){ return PAD.t + (1 - v/PMAX) * (H - PAD.t - PAD.b); }
+function yPrice(v){
+  const inner = H - PAD.t - PAD.b;
+  if (priceScale === 'log'){
+    const lMin = Math.log10(LOG_FLOOR);
+    const lMax = Math.log10(PMAX);
+    const lv = Math.log10(Math.max(v, LOG_FLOOR));
+    return PAD.t + (1 - (lv - lMin)/(lMax - lMin)) * inner;
+  }
+  return PAD.t + (1 - v/PMAX) * inner;
+}
 function yS(v){ return PAD.t + (1 - v/SMAX) * (H - PAD.t - PAD.b); }
 
 function searchArea(){
@@ -645,7 +676,8 @@ function stroke(arr, color, w, scaleFn){
 function fmtPriceTick(v){
   if (v === 0) return '$0';
   if (v >= 1000) return '$' + (v/1000) + 'k';
-  return '$' + v;
+  if (v >= 1) return '$' + v;
+  return '$' + v.toFixed(v >= 0.1 ? 1 : 2);
 }
 function roundRect(ctx, x, y, w, h, r, fill, stroke){
   ctx.beginPath();
@@ -669,8 +701,9 @@ function draw(){
 
   ctx.font = '11px "IBM Plex Mono",monospace';
   ctx.textBaseline = 'middle';
-  priceTicks.forEach(t => {
+  getPriceTicks().forEach(t => {
     const y = yPrice(t);
+    if (y < PAD.t - 0.5 || y > H - PAD.b + 0.5) return;
     ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD.l, y); ctx.lineTo(W - PAD.r, y); ctx.stroke();
     ctx.fillStyle = '#c96e00'; ctx.textAlign = 'right';
@@ -826,6 +859,22 @@ cv.parentElement.addEventListener('mousemove', e => {
   hover = i; draw(); showTip(i);
 });
 cv.parentElement.addEventListener('mouseleave', () => { hover = -1; tipEl.style.opacity = 0; draw(); });
+
+// --- Bitcoin price scale toggle (linear / log) ---
+const scaleLinearBtn = document.getElementById('scaleLinear');
+const scaleLogBtn = document.getElementById('scaleLog');
+function applyScale(mode){
+  priceScale = mode;
+  scaleLinearBtn.classList.toggle('active', mode === 'linear');
+  scaleLogBtn.classList.toggle('active', mode === 'log');
+  scaleLinearBtn.setAttribute('aria-pressed', mode === 'linear');
+  scaleLogBtn.setAttribute('aria-pressed', mode === 'log');
+  try { localStorage.setItem('icdy-scale', mode); } catch(e){}
+  draw();
+}
+scaleLinearBtn.addEventListener('click', () => applyScale('linear'));
+scaleLogBtn.addEventListener('click', () => applyScale('log'));
+applyScale(priceScale);
 
 new ResizeObserver(draw).observe(cv.parentElement);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(draw);
