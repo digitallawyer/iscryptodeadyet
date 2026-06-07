@@ -675,7 +675,7 @@ function fmtPriceTick(v){
   if (v === 0) return '$0';
   if (v >= 1000) return '$' + (v/1000) + 'k';
   if (v >= 1) return '$' + v;
-  return '$' + v.toFixed(v >= 0.1 ? 1 : 2);
+  return '$' + v.toFixed(2);
 }
 function roundRect(ctx, x, y, w, h, r, fill, stroke){
   ctx.beginPath();
